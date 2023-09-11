@@ -1,21 +1,78 @@
-import React from 'react'
-import { useDispatch } from 'react-redux'
-import { Link } from 'react-router-dom'
-import { deleteUser } from '../redux/allAction'
+import { useEffect } from "react";
+import { connect } from "react-redux";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { FetchUserList,Removeuser} from "../Redux/Action";
 
-const List = ({user}) => {
-   const {name,email,phone,id}=user
-   const dispatch = useDispatch()
-  return (
-    <tr>
-    <td>{name}</td>
-    <td>{email}</td>
-    <td>{phone}</td>
-    <td><Link to={`/edit-user/${id}`}><button type='button' className='btn btn-primary'>Edit</button></Link></td>
-    <td><button type='button' className='btn btn-danger' onClick={()=>dispatch(deleteUser(id))}>Delete</button></td>
+const List = (props) => {
+    useEffect(() => {
+        props.loaduser();
+    }, [])
+    const handledelete = (id) => {
+        if (window.confirm('Do you want to remove?')) {
+             props.removeuser(id);
+             props.loaduser();
+             toast.success('User removed successfully.')
+        }
+    }
+    return (
+        props.user.loading ? <div><h2>Loading...</h2></div> :
+            props.user.errmessage ? <div><h2>{props.user.errmessage}</h2></div> :
 
-</tr>
-  )
+                <div>
+                    <div className="card">
+                        <div className="card-header" >
+                            <Link to={'/user/add'} className="btn btn-success">Add User [+]</Link>
+                        </div>
+                        <div className="card-body">
+                            <table className="table table-bordered">
+                                <thead className="bg-dark text-white">
+                                    <tr>
+                                        <td>id</td>
+                                        <td>Name</td>
+                                        <td>Email</td>
+                                        <td>Phone</td>
+                                      
+                                        <td>Action</td>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        props.user.userlist && props.user.userlist.map(item =>
+                                            <tr key={item.id}>
+                                                <td>{item.id}</td>
+                                                <td>{item.name}</td>
+                                                <td>{item.email}</td>
+                                                <td>{item.phone}</td>
+                                               
+                                                <td>
+                                                    <Link to={'/user/edit/' + item.id} className="btn btn-primary">Edit</Link> {' '}
+                                                    <button onClick={() => { handledelete(item.id) }} className="btn btn-danger">Delete</button>
+                                                </td>
+                                            </tr>
+                                        )
+                                    }
+
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+    );
 }
 
-export default List
+const mapStateToProps = (state) => {
+    return {
+        user: state.user
+    }
+}
+const mapDispatchToProps = (dispatch) => {
+    return {
+        loaduser: () => dispatch(FetchUserList()),
+        removeuser:(id)=>dispatch(Removeuser(id))
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(List);
